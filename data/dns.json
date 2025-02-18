@@ -1,0 +1,10 @@
+[
+    {
+        "name": "voting.com",
+        "type": "A",
+        "addr": [
+                    {"ip": "localhost", "port": 1010}, 
+                    {"ip": "localhost", "port": 1011}
+                ]
+    }
+]

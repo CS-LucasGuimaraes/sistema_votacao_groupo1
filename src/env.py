@@ -1,0 +1,2 @@
+DNS_ADDRESS = "localhost"
+DNS_PORT = 8888
