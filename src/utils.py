@@ -1,10 +1,18 @@
+import os
 import json
 
-def readjson():
-    f = open('./data/dns.json', 'r')
+def readjson(path):
+    file = os.path.join("./data", f"{path}.json")
+    f = open(file, 'r')
     data = json.load(f)
     f.close()
     return data
+
+def writejson(data, path):
+    file = os.path.join("./data", f"{path}.json")
+    f = open(file, 'w')
+    json.dump(data, f)
+    f.close()
 
 def http_parser_request(html_string):
     
