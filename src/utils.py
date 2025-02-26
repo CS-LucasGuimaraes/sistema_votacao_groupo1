@@ -1,7 +1,7 @@
 import json
 
-def readjson():
-    f = open('./data/dns.json', 'r')
+def readjson(path):
+    f = open(path, 'r')
     data = json.load(f)
     f.close()
     return data

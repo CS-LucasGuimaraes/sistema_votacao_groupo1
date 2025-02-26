@@ -3,18 +3,38 @@ from utils import http_parser_request
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 
-def http_get(socket_client):
-    msgHeader = 'HTTP/1.1 200 OK \r\n' \
-                'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
-                'Server: MyServer/0.0.1\r\n' \
-                'Content-Type: text/html\r\n' \
-                '\r\n'
-    msgBody = '<html>' \
-              '<head><title>Hello, World</title></head>' \
-              '<body><h1> Your first web server!</h1>' \
-              '<h3>Congratulation!!</h3>' \
-              '</body>' \
-              '</html>'
+def http_get(socket_client, request):
+    if ('Connection' in request and request['Connection'] == 'keep-alive'):
+        msgHeader = 'HTTP/1.1 200 OK \r\n' \
+                    'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
+                    'Server: MyServer/0.0.1\r\n' \
+                    'Content-Type: text/html\r\n' \
+                    'Connection: keep-alive' \
+                    '\r\n'
+    else:
+        msgHeader = 'HTTP/1.1 200 OK \r\n' \
+                    'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
+                    'Server: MyServer/0.0.1\r\n' \
+                    'Content-Type: text/html\r\n' \
+                    '\r\n'
+
+    candidates = ["1", '2'];
+
+    if (request['Path'] == '/'):
+        msgBody =   '<html>' \
+                    '<head><title>Hello, World</title></head>' \
+                    '<body><h1> Your first web server!</h1>' \
+                    '<h3>Congratulation!!</h3>' \
+                    '</body>' \
+                    '</html>'
+    if (request['Path'] == '/candidates'):
+        msgBody =   '<html>' \
+                    '<head><title>Candidates</title></head>' \
+                    '<body>' \
+                   f'<h3>{candidates[0]}</h3>' \
+                   f'<h3>{candidates[1]}</h3>' \
+                    '</body>'\
+                    '</html>'
 
     msgHtml = msgHeader + msgBody
 
@@ -24,26 +44,31 @@ def http_post():
     ...
 
 def handle_request(socket_client):
-    req = socket_client.recv(2048).decode()
-    if(req == ''):
-        socket_client.close()
-        return
     
-    request = http_parser_request(req)
+    keep_alive = True
+    while keep_alive:
+        keep_alive = False
+        req = socket_client.recv(2048).decode()
+        if(req == ''):
+            socket_client.close()
+            return
+        
+        request = http_parser_request(req)
 
-    if(request['Method'] == 'GET'):
-        http_get(socket_client)
+        if ('Connection' in request and request['Connection'] == 'keep-alive'):
+            keep_alive = True
+
+        if(request['Method'] == 'GET'):
+            http_get(socket_client, request)
+        
+        elif(request['Method'] == 'POST'):
+            http_post()
     
-    elif(request['Method'] == 'POST'):
-        http_post()
-    
-    return
 
 def main():
     server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.bind(("localhost", 1011))
-
-    print("Server Socket initialized.")
+    server_socket.bind(("localhost", 1010))
+    print("Main Server initialized.")
     server_socket.listen()
 
     while 1:
