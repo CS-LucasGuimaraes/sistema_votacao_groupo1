@@ -2,15 +2,13 @@ import os
 import json
 
 def readjson(path):
-    file = os.path.join("./data", f"{path}.json")
-    f = open(file, 'r')
+    f = open("./data/" + path + ".json", 'r')
     data = json.load(f)
     f.close()
     return data
 
 def writejson(data, path):
-    file = os.path.join("./data", f"{path}.json")
-    f = open(file, 'w')
+    f = open("./data/" + path + ".json", 'w')
     json.dump(data, f)
     f.close()
 
@@ -19,7 +17,7 @@ def http_parser_request(html_string):
     map = dict()
     html_string = html_string.split('\r\n')
     
-    map['body'] = ''
+    map['body'] = dict()
 
     first = True
     is_body = False
@@ -40,7 +38,9 @@ def http_parser_request(html_string):
                 map[i[0]] = i[1]
 
         else:
-            map['body'] += i +'\n'
+            i = i.replace('"', '').split(':')
+            if (len(i) > 1):
+                map['body'][i[0]] = i[1]
 
     return map
 

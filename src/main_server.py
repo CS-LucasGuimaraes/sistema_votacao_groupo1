@@ -6,6 +6,8 @@ from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 
 def http_get(socket_client, request):
+    msgHeader = '' ; msgBody = ''
+
     if ('Connection' in request and request['Connection'] == 'keep-alive'):
         msgHeader = 'HTTP/1.1 200 OK \r\n' \
                     'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
@@ -42,14 +44,33 @@ def http_get(socket_client, request):
 
     socket_client.send(msgHtml.encode())
 
-def http_post(socket_client):
-    #duvida de como seria o reply
-    #client ainda não votou
-    msgHeader = 'HTTP/1.1 200 OK \r\n' \
-                'Host: voting.com\r\n' \
-                'Content-Type: text/html\r\n' \
-                '\r\n'
-                #'voto': registrado
+def http_post(socket_client, request):
+    if request['path'] == '/sendkey':
+        msgHeader = ''
+        votou = False
+        #adicionar o voto
+        for client in readjson("keys"):
+            if client['key'] == request['body']['key']: #caso a pessoa já votou
+                votou = True
+                #reply de já votou http_post()
+                msgHeader = 'HTTP/1.1 500 Error \r\n' \
+                            'Host: voting.com\r\n' \
+                            'Content-Type: text/html\r\n' \
+                            '\r\n'
+
+        if votou == False:
+            #adiciona a chave no keys.json
+            keys_dados = readjson("keys")
+            keys_dados.append({"key": request['body']['key']})
+            writejson("keys", keys_dados)
+
+            msgHeader = 'HTTP/1.1 200 OK \r\n' \
+                        'Host: voting.com\r\n' \
+                        'Content-Type: text/html\r\n' \
+                        '\r\n'
+            #reply o voto registrado
+    if request['path'] == '/voting':
+        ...
    
     socket_client.send(msgHeader.encode())
 
@@ -70,29 +91,9 @@ def handle_request(socket_client):
 
         if(request['Method'] == 'GET'):
             http_get(socket_client, request)
-        
-        elif(request['Method'] == 'POST'):
-            http_post()
     
-    elif(request['Method'] == 'POST'):
-        votou = False
-        #adicionar o voto
-        for cliente in readjson("keys"):
-            if cliente['chave'] == request['Key']:
-                #caso a pessoa já votou
-                votou = True
-                #reply de já votou http_post()
-
-
-        #caso a pessoa ainda não votou
-        if votou == False:
-            #adiciona a chave no keys.json
-            keys_dados = readjson("keys")
-            keys_dados.append({"chave": request['Key']})
-            writejson("keys", keys_dados)
-
-            #responder o voto registrado
-            http_post(socket_client)
+        elif(request['Method'] == 'POST'):
+            http_post(socket_client, request)
     
     return
 

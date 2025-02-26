@@ -7,5 +7,5 @@ Connection: keep-alive\r\n
 Content-Length: 31\r\n
 \r\n
 {\r\n
-    "vote": "candidato 1"\r\n
+    "key": "chave"\r\n
 }'

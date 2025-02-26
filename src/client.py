@@ -48,12 +48,12 @@ def get_candidate_list(client_socket):
             exit()
     
         msg =  'GET /candidates HTTP/1.1\r\n' \
-        f'Host: {SERVER_ADDRESS}:{SERVER_PORT}\r\n'
-            # 'Content-Length: 31\r\n' \
-            # '\r\n'
-            # '{\r\n' \
-            # 'vote": "candidato 1"\r\n ' \
-            # '}'
+        f'Host: {SERVER_ADDRESS}:{SERVER_PORT}\r\n' \
+            'Content-Length: 31\r\n' \
+            '\r\n' \
+            '{\r\n' \
+            f'"key": "vote"\r\n ' \
+            '}'
         
         client_socket.send(msg.encode())
         
@@ -82,10 +82,14 @@ def get_addr_from_name(name):
 def main():    
     client_socket = socket(AF_INET, SOCK_STREAM)
 
-    print(get_candidate_list(client_socket))
-    print(get_candidate_list(client_socket))
-    print(get_candidate_list(client_socket))
-    print(get_candidate_list(client_socket))
+    # get_main_page();
+    # post_sendkey('/sendkey')
+    # if já voltou:
+    #   get_result()
+    # if não votou:
+    #   post_vote()
+    #get_result()
+    
     print(get_candidate_list(client_socket))
 
     while(1):

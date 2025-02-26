@@ -9,7 +9,7 @@ def handle_request(socket_client):
 
     dns_client = socket(AF_INET, SOCK_STREAM)
 
-    for site in readjson('./data/dns.json'):
+    for site in readjson('dns'):
         if site['name'] == request:
             for addr in site['addr']: 
                 try:
