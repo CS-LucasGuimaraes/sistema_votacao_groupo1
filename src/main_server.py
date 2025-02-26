@@ -1,4 +1,6 @@
 from utils import http_parser_request
+from utils import readjson
+from utils import writejson
 
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
@@ -40,8 +42,16 @@ def http_get(socket_client, request):
 
     socket_client.send(msgHtml.encode())
 
-def http_post():
-    ...
+def http_post(socket_client):
+    #duvida de como seria o reply
+    #client ainda não votou
+    msgHeader = 'HTTP/1.1 200 OK \r\n' \
+                'Host: voting.com\r\n' \
+                'Content-Type: text/html\r\n' \
+                '\r\n'
+                #'voto': registrado
+   
+    socket_client.send(msgHeader.encode())
 
 def handle_request(socket_client):
     
@@ -64,6 +74,27 @@ def handle_request(socket_client):
         elif(request['Method'] == 'POST'):
             http_post()
     
+    elif(request['Method'] == 'POST'):
+        votou = False
+        #adicionar o voto
+        for cliente in readjson("keys"):
+            if cliente['chave'] == request['Key']:
+                #caso a pessoa já votou
+                votou = True
+                #reply de já votou http_post()
+
+
+        #caso a pessoa ainda não votou
+        if votou == False:
+            #adiciona a chave no keys.json
+            keys_dados = readjson("keys")
+            keys_dados.append({"chave": request['Key']})
+            writejson("keys", keys_dados)
+
+            #responder o voto registrado
+            http_post(socket_client)
+    
+    return
 
 def main():
     server_socket = socket(AF_INET, SOCK_STREAM)
