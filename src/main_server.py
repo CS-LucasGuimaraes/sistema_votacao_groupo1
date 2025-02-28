@@ -22,7 +22,7 @@ def http_get(socket_client, request):
                     'Content-Type: text/html\r\n' \
                     '\r\n'
 
-    candidates = ["1", '2'];
+    candidates = ["1", '2']
 
     if (request['Path'] == '/'):
         msgBody =   '<html>' \
@@ -37,6 +37,16 @@ def http_get(socket_client, request):
                     '<body>' \
                    f'<h3>{candidates[0]}</h3>' \
                    f'<h3>{candidates[1]}</h3>' \
+                    '</body>'\
+                    '</html>'
+    if (request['Path'] == '/candidates-results'):
+        candidates = readjson("election")
+            
+        msgBody =   '<html>' \
+                    '<head><title>Candidates Results</title></head>' \
+                    '<body>' \
+                   f'<h3>{f"Candidate 1 has {candidates['candidato 1']} votes"}</h3>' \
+                   f'<h3>{f"Candidate 2 has {candidates['candidato 2']} votes"}</h3>' \
                     '</body>'\
                     '</html>'
 
@@ -63,6 +73,12 @@ def http_post(socket_client, request):
             keys_dados = readjson("keys")
             keys_dados.append({"key": request['body']['key']})
             writejson("keys", keys_dados)
+
+            #adiciona voto para candidato
+            #   candidates_dados = readjson("election")
+                #ver onde recebe o voto
+            #   candidates_dados["candidato X"] += 1  
+            #   writejson("election", candidates_dados)
 
             msgHeader = 'HTTP/1.1 200 OK \r\n' \
                         'Host: voting.com\r\n' \
@@ -107,6 +123,21 @@ def main():
         socket_client, addr_client = server_socket.accept()
         print(f"Established connection with {addr_client}")
         Thread(target=handle_request, args=(socket_client,)).start()
+
+    #while 1:
+    # antes de aceitar a requisição soma os votos
+    #   candidates = readjson("election")
+    #   total_votes = 0
+    #   for cadidate, votes in candidates.items():
+    #       total_votos += votes
+        
+    #   if total_votes >= 15:
+    #        print("Vote limit reached. Shutting down server...")
+    #        break  
+
+    #    socket_client, addr_client = server_socket.accept()
+    #    print(f"Established connection with {addr_client}")
+    #    Thread(target=handle_request, args=(socket_client,)).start()
 
 if __name__ == '__main__':
     main()        
