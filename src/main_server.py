@@ -22,7 +22,7 @@ def http_get(socket_client, request):
                     'Content-Type: text/html\r\n' \
                     '\r\n'
 
-    candidates = ["1", '2'];
+    candidates = [k for [k,v] in readjson('election').split(',')]
 
     if (request['Path'] == '/'):
         msgBody =   '<html>' \

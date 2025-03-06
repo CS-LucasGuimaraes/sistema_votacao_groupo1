@@ -49,11 +49,11 @@ def get_candidate_list(client_socket):
     
         msg =  'GET /candidates HTTP/1.1\r\n' \
         f'Host: {SERVER_ADDRESS}:{SERVER_PORT}\r\n' \
-            'Content-Length: 31\r\n' \
-            '\r\n' \
-            '{\r\n' \
-            f'"key": "vote"\r\n ' \
-            '}'
+            # 'Content-Length: 31\r\n' \
+            # '\r\n'
+            # '{\r\n' 
+            # f'"key": "vote"\r\n ' \
+            # '}'
         
         client_socket.send(msg.encode())
         
@@ -87,10 +87,10 @@ def main():
     # if já voltou:
     #   get_result()
     # if não votou:
+    print(get_candidate_list(client_socket))
     #   post_vote()
     #get_result()
     
-    print(get_candidate_list(client_socket))
 
     while(1):
         pass
