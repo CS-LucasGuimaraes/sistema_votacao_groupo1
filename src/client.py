@@ -65,6 +65,28 @@ def get_candidate_list(client_socket):
     except:
         return None
 
+def get_result(client_socket):
+    try:
+        try:
+            connect_to_server(client_socket)
+        except:
+            exit()
+    
+        msg =  'GET /candidates-results HTTP/1.1\r\n' \
+        f'Host: {SERVER_ADDRESS}:{SERVER_PORT}\r\n' \
+            'Content-Length: 31\r\n' \
+            '\r\n' \
+            '{\r\n' \
+        
+        client_socket.send(msg.encode())
+        
+        recv = client_socket.recv(1024).decode()
+        
+        client_socket.close()
+        
+        return recv
+    except:
+        return None
 
 def get_addr_from_name(name):
     try:
@@ -82,10 +104,14 @@ def get_addr_from_name(name):
 def main():    
     client_socket = socket(AF_INET, SOCK_STREAM)
 
+    #a votacao deve ser encerrada quando já tiver 15 votos 
+
     # get_main_page();
     # post_sendkey('/sendkey')
     # if já voltou:
-    #   get_result()
+    #   servidor: avisa que já votou
+    #   cliente: manda um get do resultado
+    #   servidor: get_result()
     # if não votou:
     print(get_candidate_list(client_socket))
     #   post_vote()
