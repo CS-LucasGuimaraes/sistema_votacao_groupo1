@@ -1,15 +1,20 @@
 import json
+from threading import Lock
+
+mutex = Lock()
 
 def readjson(path):
-    f = open("./data/" + path + ".json", 'r')
-    data = json.load(f)
-    f.close()
-    return data
+    with mutex:
+        f = open("./data/" + path + ".json", 'r')
+        data = json.load(f)
+        f.close()
+        return data
 
 def writejson(data, path):
-    f = open("./data/" + path + ".json", 'w')
-    json.dump(data, f)
-    f.close()
+    with mutex:
+        f = open("./data/" + path + ".json", 'w')
+        json.dump(data, f)
+        f.close()
 
 def http_parser_request(html_string):
     

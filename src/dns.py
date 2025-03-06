@@ -24,7 +24,7 @@ def handle_request(socket_client):
     socket_client.close()
     return
 
-def main():
+def dns():
     server_socket = socket(AF_INET, SOCK_STREAM)
     server_socket.bind((DNS_ADDRESS, DNS_PORT))
 
@@ -36,4 +36,5 @@ def main():
         print(f"Established connection with {addr_client}")
         Thread(target=handle_request, args=(socket_client,)).start()
 
-main()        
+if __name__ == '__main__':
+    dns()       

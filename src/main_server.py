@@ -5,139 +5,105 @@ from utils import writejson
 from socket import socket, AF_INET, SOCK_STREAM
 from threading import Thread
 
-def http_get(socket_client, request):
-    msgHeader = '' ; msgBody = ''
+from Crypto.PublicKey import RSA
+from Crypto.Signature import pkcs1_15 
+from Crypto.Hash import SHA256
 
-    if ('Connection' in request and request['Connection'] == 'keep-alive'):
-        msgHeader = 'HTTP/1.1 200 OK \r\n' \
-                    'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
-                    'Server: MyServer/0.0.1\r\n' \
-                    'Content-Type: text/html\r\n' \
-                    'Connection: keep-alive' \
-                    '\r\n'
-    else:
-        msgHeader = 'HTTP/1.1 200 OK \r\n' \
-                    'Date: Tue, 09 Aug 2022 13:23:35 GMT\r\n' \
-                    'Server: MyServer/0.0.1\r\n' \
-                    'Content-Type: text/html\r\n' \
-                    '\r\n'
+vote_limit = {}
+end = False
 
-    candidates = [k for [k,v] in readjson('election').split(',')]
-
-    if (request['Path'] == '/'):
-        msgBody =   '<html>' \
-                    '<head><title>Hello, World</title></head>' \
-                    '<body><h1> Your first web server!</h1>' \
-                    '<h3>Congratulation!!</h3>' \
-                    '</body>' \
-                    '</html>'
-    if (request['Path'] == '/candidates'):
-        msgBody =   '<html>' \
-                    '<head><title>Candidates</title></head>' \
-                    '<body>' \
-                   f'<h3>{candidates[0]}</h3>' \
-                   f'<h3>{candidates[1]}</h3>' \
-                    '</body>'\
-                    '</html>'
-    if (request['Path'] == '/candidates-results'):
-        candidates = readjson("election")
-            
-        msgBody =   '<html>' \
-                    '<head><title>Candidates Results</title></head>' \
-                    '<body>' \
-                   f'<h3>{f"Candidate 1 has {candidates['candidato 1']} votes"}</h3>' \
-                   f'<h3>{f"Candidate 2 has {candidates['candidato 2']} votes"}</h3>' \
-                    '</body>'\
-                    '</html>'
-
-    msgHtml = msgHeader + msgBody
-
-    socket_client.send(msgHtml.encode())
-
-def http_post(socket_client, request):
-    if request['path'] == '/sendkey':
-        msgHeader = ''
-        votou = False
-        #adicionar o voto
-        for client in readjson("keys"):
-            if client['key'] == request['body']['key']: #caso a pessoa já votou
-                votou = True
-                #reply de já votou http_post()
-                msgHeader = 'HTTP/1.1 500 Error \r\n' \
-                            'Host: voting.com\r\n' \
-                            'Content-Type: text/html\r\n' \
-                            '\r\n'
-
-        if votou == False:
-            #adiciona a chave no keys.json
-            keys_dados = readjson("keys")
-            keys_dados.append({"key": request['body']['key']})
-            writejson("keys", keys_dados)
-
-            #adiciona voto para candidato
-            #   candidates_dados = readjson("election")
-                #ver onde recebe o voto
-            #   candidates_dados["candidato X"] += 1  
-            #   writejson("election", candidates_dados)
-
-            msgHeader = 'HTTP/1.1 200 OK \r\n' \
-                        'Host: voting.com\r\n' \
-                        'Content-Type: text/html\r\n' \
-                        '\r\n'
-            #reply o voto registrado
-    if request['path'] == '/voting':
-        ...
-   
-    socket_client.send(msgHeader.encode())
-
-def handle_request(socket_client):
-    
-    keep_alive = True
-    while keep_alive:
-        keep_alive = False
-        req = socket_client.recv(2048).decode()
-        if(req == ''):
+def handle_request(socket_client, port):
+    global vote_limit, end
+    login = ''
+    while 1:
+        if (end): 
+            # mandar mensagem de encerramento
             socket_client.close()
             return
+
+
+        req = socket_client.recv(2048).decode()
         
-        request = http_parser_request(req)
-
-        if ('Connection' in request and request['Connection'] == 'keep-alive'):
-            keep_alive = True
-
-        if(request['Method'] == 'GET'):
-            http_get(socket_client, request)
+        if (req == ''):
+            socket_client.close()
+            return
     
-        elif(request['Method'] == 'POST'):
-            http_post(socket_client, request)
+        elif (req == 'get candidates'):
+            candidates = list(readjson("election").keys())
+            socket_client.send(str(candidates).encode())
+        
+        elif (req == "vote"):            
+            signature = socket_client.recv(2048)
+            socket_client.send("ok".encode())
+            vote = socket_client.recv(2048).decode()
+            socket_client.send("ok".encode())
+
+            hash_vote = SHA256.new(vote.encode())
+
+            public_key = RSA.import_key(readjson("public_keys")[login][0])
+
+            try:
+                pkcs1_15.new(public_key).verify(hash_vote, signature)
+                print("Assinatura válida")
+
+                if (login in readjson("public_keys") and readjson("public_keys")[login][1] == False):
+                    candidates = readjson("election")
+                    candidates[vote] += 1
+                    vote_limit[port] += 1
+
+                    writejson(candidates, "election")
+
+                    keys = readjson("public_keys")
+                    keys[login][1] = True
+                    writejson(keys, "public_keys")
+                    print("Voto computado com sucesso")
+                else:
+                    print("Voto inválido")
+
+            except:
+                print("Assinatura inválida")
+            
+
+        elif (req == "get votes"):
+            candidates = list(readjson("election"))
+            socket_client.send(str(candidates).encode())
+        
+        else: # req == login
+            login = req
+            socket_client.send("ok".encode())
+
     
+
     return
 
-def main():
+def server(port):
+    global end, vote_limit
+
+    vote_limit[port] = 0
+    
     server_socket = socket(AF_INET, SOCK_STREAM)
-    server_socket.bind(("localhost", 1010))
+    server_socket.bind(("localhost", int(port)))
     print("Main Server initialized.")
     server_socket.listen()
 
     while 1:
+        if vote_limit[port] == 8:
+            print("Vote limit reached. Shutting down server...")
+            break
+        
+        election = readjson("election") or dict()
+        votes = 0
+        for v in list(election.values()):
+            votes += v
+
+        if votes == 15:
+            end = True
+            print("Vote limit reached. Shutting down server...")
+            break
+
         socket_client, addr_client = server_socket.accept()
         print(f"Established connection with {addr_client}")
-        Thread(target=handle_request, args=(socket_client,)).start()
-
-    #while 1:
-    # antes de aceitar a requisição soma os votos
-    #   candidates = readjson("election")
-    #   total_votes = 0
-    #   for cadidate, votes in candidates.items():
-    #       total_votos += votes
-        
-    #   if total_votes >= 15:
-    #        print("Vote limit reached. Shutting down server...")
-    #        break  
-
-    #    socket_client, addr_client = server_socket.accept()
-    #    print(f"Established connection with {addr_client}")
-    #    Thread(target=handle_request, args=(socket_client,)).start()
+        Thread(target=handle_request, args=(socket_client, port)).start()    
 
 if __name__ == '__main__':
-    main()        
+    server(1010)
