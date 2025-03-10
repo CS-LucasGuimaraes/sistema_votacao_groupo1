@@ -17,6 +17,7 @@ def handle_request(socket_client):
                     dns_client.close()
                     socket_client.send(f"{addr['ip']}:{addr['port']}".encode())
                     socket_client.close()
+                    return
                 except:
                     print(f"{addr['ip']}:{addr['port']} is down.")
                     continue
