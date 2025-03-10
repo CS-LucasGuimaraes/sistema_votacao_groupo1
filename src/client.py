@@ -1,11 +1,10 @@
 from env import DNS_ADDRESS, DNS_PORT
-from utils import http_parser_reply, readjson, writejson
+from utils import readjson, writejson
 from Crypto.PublicKey import RSA
 from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
-from binascii import hexlify
-from time import sleep
+
 from threading import Lock
 
 private_keys_mutex = Lock()

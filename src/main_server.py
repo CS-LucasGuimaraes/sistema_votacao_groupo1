@@ -1,4 +1,3 @@
-from utils import http_parser_request
 from utils import readjson
 from utils import writejson
 
@@ -60,7 +59,7 @@ def handle_request(socket_client, port):
 
             except:
                 print("Assinatura inválida")
-                
+
             socket_client.send("ok".encode())
             
 
