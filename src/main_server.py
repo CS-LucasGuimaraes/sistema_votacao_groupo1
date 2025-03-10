@@ -21,7 +21,6 @@ def handle_request(socket_client, port):
             socket_client.close()
             return
 
-
         req = socket_client.recv(2048).decode()
         
         if (req == ''):
@@ -36,7 +35,6 @@ def handle_request(socket_client, port):
             signature = socket_client.recv(2048)
             socket_client.send("ok".encode())
             vote = socket_client.recv(2048).decode()
-            socket_client.send("ok".encode())
 
             hash_vote = SHA256.new(vote.encode())
 
@@ -62,6 +60,8 @@ def handle_request(socket_client, port):
 
             except:
                 print("Assinatura inválida")
+                
+            socket_client.send("ok".encode())
             
 
         elif (req == "get votes"):
@@ -102,7 +102,7 @@ def server(port):
             break
 
         socket_client, addr_client = server_socket.accept()
-        print(f"Established connection with {addr_client}")
+        # print(f"Established connection with {addr_client}")
         Thread(target=handle_request, args=(socket_client, port)).start()    
 
 if __name__ == '__main__':
