@@ -1,9 +1,9 @@
 from env import DNS_ADDRESS, DNS_PORT
 from utils import readjson, writejson
 from Crypto.PublicKey import RSA
-from Crypto.Cipher import PKCS1_OAEP
 from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
+from time import sleep
 
 from threading import Lock
 
@@ -54,57 +54,51 @@ def client(mode, login, vote):
     else:
         private_key = RSA.import_key(keys[login])
     
-    try:
-        voting_ip = get_addr("voting.com")
-        client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect((voting_ip[0], int(voting_ip[1])))
+    for i in range(2):
+        try:
+            voting_ip = get_addr("voting.com")
+            client_socket = socket(AF_INET, SOCK_STREAM)
+            client_socket.connect((voting_ip[0], int(voting_ip[1])))
 
-        client_socket.send(f"{login}".encode()) # mando meu id
-        ok = client_socket.recv(1024).decode()
-        client_socket.send(f"get candidates".encode())
-        candidates = client_socket.recv(1024).decode().split(',')
-        for i in range(len(candidates)):
-            candidates[i] = candidates[i].replace("[","").replace("]","").replace("'","").strip()
-            if mode == "interative": print(f"[{i+1}] {candidates[i]}")
+            client_socket.send(f"{login}".encode()) # mando meu id
+            ok = client_socket.recv(1024).decode()
+            client_socket.send(f"get candidates".encode())
+            candidates = client_socket.recv(1024).decode().split(',')
+            for i in range(len(candidates)):
+                candidates[i] = candidates[i].replace("[","").replace("]","").replace("'","").strip()
+                if (mode == "interative"): print(f"[{i+1}] {candidates[i]}")
 
-        client_socket.send("vote".encode())
-        if mode == "interative":
-            vote = int(input("Digite o número do candidato: "))
-        
-        candidate_name = candidates[vote-1].encode()
-        hash_vote = SHA256.new(candidate_name)
-        signature = pkcs1_15.new(private_key).sign(hash_vote)
+            client_socket.send("vote".encode())
+            if (mode == "interative"): vote = int(input("Digite o número do candidato: "))
+            
+            candidate_name = candidates[vote-1].encode()
+            hash_vote = SHA256.new(candidate_name)
+            signature = pkcs1_15.new(private_key).sign(hash_vote)
 
-        client_socket.send(signature)
-        ok = client_socket.recv(1024).decode()
-        client_socket.send(candidate_name) 
-        ok = client_socket.recv(1024).decode()
-        client_socket.close()
-    except:
-        voting_ip = get_addr("voting.com")
-        client_socket = socket(AF_INET, SOCK_STREAM)
-        client_socket.connect((voting_ip[0], int(voting_ip[1])))
+            client_socket.send(signature)
+            ok = client_socket.recv(1024).decode()
+            client_socket.send(candidate_name) 
+            print(client_socket.recv(1024).decode())
+            client_socket.close()
+            break
+        except:
+            print("Erro ao conectar com o servidor de votação")
+            if (i == 0):
+                if (mode == "interative"): print("Tentando novamente...")
+            else:
+                print("Erro ao conectar com o servidor de votação. Tente novamente mais tarde.")
+                return
 
-        client_socket.send(f"{login}".encode()) # mando meu id
-        ok = client_socket.recv(1024).decode()
-        client_socket.send(f"get candidates".encode())
-        candidates = client_socket.recv(1024).decode().split(',')
-        for i in range(len(candidates)):
-            candidates[i] = candidates[i].replace("[","").replace("]","").replace("'","").strip()
-            if (mode == "interative"): print(f"[{i+1}] {candidates[i]}")
-
-        client_socket.send("vote".encode())
-        if (mode == "interative"): vote = int(input("Digite o número do candidato: "))
-        
-        candidate_name = candidates[vote-1].encode()
-        hash_vote = SHA256.new(candidate_name)
-        signature = pkcs1_15.new(private_key).sign(hash_vote)
-
-        client_socket.send(signature)
-        ok = client_socket.recv(1024).decode()
-        client_socket.send(candidate_name) 
-        ok = client_socket.recv(1024).decode()
-        client_socket.close()
+    if (mode == "interative"): 
+        while 1:
+            client_socket = socket(AF_INET, SOCK_STREAM)
+            voting_ip = get_addr("voting.com")
+            client_socket.connect((voting_ip[0], int(voting_ip[1])))
+            client_socket.send(f"result".encode())
+            print("\nResultado da votação:")
+            print(client_socket.recv(1024).decode())
+            client_socket.close()
+            sleep(5)
 
 
 if __name__ == '__main__':

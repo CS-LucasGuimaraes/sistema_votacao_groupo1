@@ -54,24 +54,26 @@ def handle_request(socket_client, port):
                     keys[login][1] = True
                     writejson(keys, "public_keys")
                     print("Voto computado com sucesso")
+                    socket_client.send("Voto computado com sucesso!".encode())
                 else:
                     print("Voto inválido")
+                    socket_client.send("Voto inválido! Usuário não cadastrado ou usuário já votou.".encode())
 
             except:
                 print("Assinatura inválida")
+                socket_client.send("Voto inválido! Assinatura inválida.".encode())
 
-            socket_client.send("ok".encode())
             
 
-        elif (req == "get votes"):
-            candidates = list(readjson("election"))
+        elif (req == "result"):
+            candidates = readjson("election")
             socket_client.send(str(candidates).encode())
+            socket_client.close()
+            return
         
         else: # req == login
             login = req
             socket_client.send("ok".encode())
-
-    
 
     return
 
