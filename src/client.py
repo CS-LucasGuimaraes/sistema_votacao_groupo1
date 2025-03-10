@@ -6,6 +6,9 @@ from Crypto.Hash import SHA256
 from Crypto.Signature import pkcs1_15
 from binascii import hexlify
 from time import sleep
+from threading import Lock
+
+private_keys_mutex = Lock()
 
 from socket import socket, AF_INET, SOCK_STREAM
 
@@ -32,15 +35,17 @@ def client(mode, login, vote):
     if login not in list(keys.keys()):
         client_socket = socket(AF_INET, SOCK_STREAM)
         
-        auth_ip = get_addr("auth.com")
-        client_socket.connect((auth_ip[0], int(auth_ip[1])))
 
         private_key = RSA.generate(1024)
         public_key = private_key.publickey()
 
-        keys[login] = private_key.export_key().decode()
+        with private_keys_mutex:
+            keys = readjson("private_keys") or {}
+            keys[login] = private_key.export_key().decode()
+            writejson(keys, "private_keys")
 
-        writejson(keys, "private_keys")
+        auth_ip = get_addr("auth.com")
+        client_socket.connect((auth_ip[0], int(auth_ip[1])))
 
         client_socket.send(login.encode())
         ok = client_socket.recv(1024).decode()
@@ -61,7 +66,7 @@ def client(mode, login, vote):
         candidates = client_socket.recv(1024).decode().split(',')
         for i in range(len(candidates)):
             candidates[i] = candidates[i].replace("[","").replace("]","").replace("'","").strip()
-            print(f"[{i+1}] {candidates[i]}")
+            if mode == "interative": print(f"[{i+1}] {candidates[i]}")
 
         client_socket.send("vote".encode())
         if mode == "interative":
@@ -87,10 +92,10 @@ def client(mode, login, vote):
         candidates = client_socket.recv(1024).decode().split(',')
         for i in range(len(candidates)):
             candidates[i] = candidates[i].replace("[","").replace("]","").replace("'","").strip()
-            print(f"[{i+1}] {candidates[i]}")
+            if (mode == "interative"): print(f"[{i+1}] {candidates[i]}")
 
         client_socket.send("vote".encode())
-        vote = int(input("Digite o número do candidato: "))
+        if (mode == "interative"): vote = int(input("Digite o número do candidato: "))
         
         candidate_name = candidates[vote-1].encode()
         hash_vote = SHA256.new(candidate_name)
