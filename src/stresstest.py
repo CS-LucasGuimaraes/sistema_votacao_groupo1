@@ -12,7 +12,7 @@ def stress():
         # print(f"Client {i} started\n")
         # client("stress", str(i), i%2)
         # print(f"\nClient {i} finished\n")
-        sleep(0.2)
+        sleep(0.5)
 
   
     sleep(5)
